@@ -3,3 +3,4 @@ const asynchandler=(requestHandler)=>{
         Promise.resolve(requestHandler(req,res,next)).catch((error))
     }
 }
+export {asynchandler}

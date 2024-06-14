@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 import crypto from "crypto"
 
-const productSchema=mongoose.Schema({
+const productSchema=new mongoose.Schema({
 
     name:{
         type:String,
@@ -21,10 +21,13 @@ const productSchema=mongoose.Schema({
         type:String,
         required:[true,'Please provide a product description'],
     },
-    avatar:{
-        type: String, //cloudinary url
-        required: true
-    },
+    photos:[
+        {
+           type:String,
+           required:true
+        }
+        
+    ],
     stock:{
         type:Number,
         required:true
