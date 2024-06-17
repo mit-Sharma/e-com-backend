@@ -18,7 +18,7 @@ import dotenv from "dotenv";
 import connectDB from "./db/index.js";
 import app from "./app.js";
 dotenv.config({
-    path:'./env'
+    path:"C:\Users\pnsha\OneDrive\Desktop\e-com backend\.env"
 })
 connectDB()//promise will be returned
 .then(()=>{

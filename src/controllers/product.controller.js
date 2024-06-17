@@ -210,3 +210,4 @@ exports.adminGetAllProduct=BigPromise(async(req,res,next)=>{
         reviews:product.reviews
     })
  })
+export {addProduct,adminupdateSingleProduct,adminDeleteSingleProduct,getSingleProduct,adminGetAllProduct,addReview,deleteReview,getOnlyReviewsForOneProduct}

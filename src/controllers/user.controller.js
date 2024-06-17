@@ -310,6 +310,8 @@ import { mailHelper } from "../utils/emailService.js";
                 
             })
 
+            export {adminDeleteSingleUserDetails,adminUpdateSingleUserDetails,adminSingleUser,updateUserPhoto,updateAccountDetails,getCurrentUser,changeCurrentPassword,passwordReset,forgetPassword,logoutuser,loginUser,registerUser};
+
 
 
 

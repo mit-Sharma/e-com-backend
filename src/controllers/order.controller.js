@@ -44,7 +44,7 @@ const getOrder=asynchandler(async(req,res)=>{
         })
 })
 
-const getLoggedInUser=asynchandler(async(req,res)=>{
+const getLoggedInOrder=asynchandler(async(req,res)=>{
     const order=await Order.find({user:req.user._id})
     if(!order)
         {
@@ -58,7 +58,7 @@ const getLoggedInUser=asynchandler(async(req,res)=>{
 
 })
 
-const getLAllOrder=asynchandler(async(req,res)=>{
+const getAllOrder=asynchandler(async(req,res)=>{
 
     const order=await Order.find()
 
@@ -102,3 +102,5 @@ const adminDeleteOrder=BigPromise(async (req,res)=>{
         success:true
     })
 })
+
+export{adminUpdateOrder,adminDeleteOrder,getOrder,createOrder,getLoggedInOrder,getAllOrder}
