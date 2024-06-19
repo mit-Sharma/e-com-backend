@@ -9,6 +9,7 @@ import { cookieToken } from "../utils/cookietoken.js";
 import { mailHelper } from "../utils/emailService.js";
 import { Product } from "../models/product.model.js";
 import {v2 as cloudinary} from "cloudinary";
+import { whereclause } from "../utils/whereclause.js";
 
 const addProduct=asynchandler(async(req,res)=>{
     let imageArray=[];
@@ -34,6 +35,16 @@ const addProduct=asynchandler(async(req,res)=>{
         .json(new ApiResponse(200,product,"product added successfully"))
 
 }) 
+const getAllProduct=asynchandler(async(req,res)=>{
+    const resPerPage=6;
+    const productCount=await Product.countDocuments();
+    const productObject=new whereclause(Product.find(),req.query).search().filter().pager(resPerPage)
+    let products=await productObject.base.clone()
+    res.status(200).json({
+        success:true,
+        products,
+    })
+})
 
 exports.adminGetAllProduct=BigPromise(async(req,res,next)=>{
 
@@ -210,4 +221,4 @@ exports.adminGetAllProduct=BigPromise(async(req,res,next)=>{
         reviews:product.reviews
     })
  })
-export {addProduct,adminupdateSingleProduct,adminDeleteSingleProduct,getSingleProduct,adminGetAllProduct,addReview,deleteReview,getOnlyReviewsForOneProduct}
+export {addProduct,adminupdateSingleProduct,adminDeleteSingleProduct,getSingleProduct,getAllProduct,adminGetAllProduct,addReview,deleteReview,getOnlyReviewsForOneProduct}

@@ -23,3 +23,11 @@ export const verifyJWT=asynchandler(async(req,_,next)=>{
         
        }
 })
+export const customRole=(role)=>asynchandler(async(req,_,next)=>{
+    
+  if(req.user.role!==role){
+      
+     throw new ApiError(400,"you are not allowed for the following resources")
+  }
+  next();
+})

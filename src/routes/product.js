@@ -1,10 +1,11 @@
 import express from "express"
 const router=express.Router()
 import { verifyJWT } from "../middlewares/auth.middlewares.js"
-import { addProduct, addReview, adminDeleteSingleProduct, adminGetAllProduct, adminupdateSingleProduct, deleteReview, getOnlyReviewsForOneProduct, getSingleProduct } from "../controllers/product.controller.js"
+import { addProduct, addReview, adminDeleteSingleProduct, adminGetAllProduct, adminupdateSingleProduct, deleteReview, getAllProduct, getOnlyReviewsForOneProduct, getSingleProduct } from "../controllers/product.controller.js"
 import { adminUpdateSingleUserDetails } from "../controllers/user.controller"
+import { customRole } from "../middlewares/auth.middlewares.js"
 
-
+router.route("/product").get(getAllProduct)
 router.route("/add-review").patch(verifyJWT,addReview)
 router.route("/delete-review").delete(verifyJWT,deleteReview)
 router.route("/reviews").get(verifyJWT,getOnlyReviewsForOneProduct)
