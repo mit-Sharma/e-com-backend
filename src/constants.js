@@ -1,1 +1,1 @@
-export const DB_NAME="e-com database"
+export const DB_NAME="e-comdatabase"

@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 import mongoose ,{Schema} from 'mongoose';
-import validator, { trim } from "validator";
+import validator from "validator";
 import crypto from "crypto";
 
 const userSchema=new mongoose.Schema({
@@ -27,7 +27,7 @@ const userSchema=new mongoose.Schema({
     },
     role:{
         type:String,
-        default:'user'
+        default:"user"
 
     },
     photo:{
@@ -44,6 +44,7 @@ const userSchema=new mongoose.Schema({
 
 userSchema.pre('save',async function(next){
     if(!this.isModified('password')) return next();
+    console.log(this.password);
     this.password=await bcrypt.hash(this.password,10)
 })
 
@@ -52,7 +53,7 @@ userSchema.methods.isValidatePassword=async function(usersendpassword){
 }
 
 userSchema.methods.getAccessToken= function(){
-    jwt.sign(
+    return jwt.sign(
         {
             _id:this._id,
             email:this.email,
@@ -66,7 +67,7 @@ userSchema.methods.getAccessToken= function(){
 }
 
 userSchema.methods.getRefreshToken= function(){
-    jwt.sign(
+    return jwt.sign(
         {
             _id:this._id,
             
@@ -78,7 +79,7 @@ userSchema.methods.getRefreshToken= function(){
 
     )
 }
-userSchema.methods.getForgetPasswordToken=()=>{
+userSchema.methods.getForgetPasswordToken=function(){
     const forgetToken=crypto.randomBytes(20);
     const temp=forgetToken;
     this.forgotPasswordToken=crypto.createHash("sha256").update(forgetToken).digest('hex');

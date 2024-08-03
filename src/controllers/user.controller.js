@@ -7,6 +7,7 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { cookieToken } from "../utils/cookietoken.js";
 import { mailHelper } from "../utils/emailService.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
         const generateAccessandRefreshToken=async(userId)=>{
         try {
@@ -27,13 +28,13 @@ import { mailHelper } from "../utils/emailService.js";
         if(!photoLocalPath){
         throw new ApiError(400, "Photo is missing!")
         }
-        const {name,email,password}=req.body;
+        const {name,email,password,role}=req.body;
 
         if([name,email,password].some((field)=>field?.trim ===""))
         {
          throw new ApiError(400,"All fields are required");     
         }
-        const existedUser=User.findOne({
+        const existedUser=await User.findOne({
         $or:[{"email":email,"name":name}]
         }) 
         if(existedUser)
@@ -50,20 +51,21 @@ import { mailHelper } from "../utils/emailService.js";
                 photo: photo.url,
                 email,
                 password,
+                role
             });
-        const createdUser=await User.findById(user._id).select("-password -refreshToken");
+        const createdUser=await User.findById(user._id).select("-password");
         if(!createdUser)
             {
                 throw  new ApiError(500, "Server went wrong while registering the user");
             } 
         return res.status(201).json(
             new ApiResponse(200,createdUser,"user is successfully registered")
-        );
+        )
         })
-        const loginUser = asyncHandler(async (req,res)=>{
-            const{name,email,password}=req.body;
-            /* checking if user has not logged in through any of the fields*/
-            /* atleast one is required*/
+        
+            const loginUser = asynchandler(async (req,res)=>{
+            console.log(req.body);
+            const {name,email,password}=req.body;
             if(!(name||email))
             {
                 throw new  ApiError(400,"Name or Email is required");
@@ -77,12 +79,12 @@ import { mailHelper } from "../utils/emailService.js";
             {
                 throw new ApiError(404,"User does not exist")
             }
-            const isPasswordValid=await user.isPasswordCorrect(password);
+            const isPasswordValid=await user.isValidatePassword(password);
         
             if(!isPasswordValid){
                 throw new ApiError(401,"invalid user credentials");
             }
-            const {accessToken,refreshToken}=await generateAccessAndRefreshToken(user._id)
+            const {accessToken,refreshToken}=await generateAccessandRefreshToken(user._id);
             const loggedInUser=await User.findById(user._id).select('-password -refreshToken');
             const options={
                 httpOnly: true,
@@ -105,7 +107,7 @@ import { mailHelper } from "../utils/emailService.js";
         
         })
 
-            const logoutuser= asynchandler(async(req,res)=>{
+             const logoutuser= asynchandler(async(req,res)=>{
                 await User.findByIdAndUpdate(
                     req.user._id,
                     {
@@ -129,17 +131,54 @@ import { mailHelper } from "../utils/emailService.js";
                 .json(new ApiResponse(200,{},'Logged out successfully'))
 
             })
+            const refreshAccessToken= asynchandler(async (req,res)=> {
+                const incomingRefreshToken=req.cookies.refreshToken || req.body.refreshToken
+                
+                if(!incomingRefreshToken){
+                    throw new ApiError(401, "Unauthorized request");
+                 }
+                 try {
+                    const decodedToken=jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET);
+               
+                    const user=await User.findById(decodedToken?._id);
+               
+                    if(!user){
+                       throw new ApiError(401, "invalid refresh token");
+                    }
+                    
+                    if( incomingRefreshToken != user?.refreshToken){
+                       throw new ApiError(401, "Refresh token is expired or used");
+                    }
+               
+                    const options={
+                       httpOnly:true,
+                       secure:true
+                    }
+                     const {accessToken,newrefreshToken}= await generateAccessAndRefreshToken(user._id);
+               
+                     return res
+                     .status(200)
+                     .cookie("accessToken",accessToken,options)
+                     .cookie("refreshToken",newrefreshToken,options)
+                     .json(
+                       new ApiResponse(200,{
+                           accessToken,refreshToken: newrefreshToken},"New Access Token Generated")
+                       )
+                 } catch (error) {
+                    return new ApiError(401, error?.message ||  "Invalid refresh token");
+                    }
+                })
 
 
-            const forgetPassword=asynchandler(async(req,res)=>{
+             const forgetPassword=asynchandler(async(req,res)=>{
                const {email}=req.body;
                const user= await User.findOne({email});
+               console.log(user);
                if(!user)
                 {
-                    return next(new ApiError(400,'User is not registered in the database'))
+                    throw new ApiError(400,'User is not registered in the database')
                 }
-                const forgotToken=user.getForgotPasswordToken();
-                res.send(forgotToken);
+                const forgotToken=user.getForgetPasswordToken();
                 user.save({validateBeforeSave:false})
                 const myurl=`${req.protocol}://${req.get("host")}/password/${forgotToken}`;
                 const message=`copy paste this link in your url and hit the enter \n\n ${myurl}`;
@@ -151,7 +190,7 @@ import { mailHelper } from "../utils/emailService.js";
                     })
                     return res
                     .status(200)
-                    .json(new ApiResponse(200,{},"email send successfully"))
+                    .json(new ApiResponse(200,{forgotToken},"email send successfully"))
                     
                 } catch (error) {
                     user.forgetPasswordToken=undefined;
@@ -164,7 +203,7 @@ import { mailHelper } from "../utils/emailService.js";
             })
 
 
-            const passwordReset=asynchandler(async(req,res)=>{
+             const passwordReset=asynchandler(async(req,res)=>{
                 const token=req.params.token
                 console.log("token"+token);
                 const encryptToken=crypto.createHash("sha256").update(token).digest('hex')
@@ -175,26 +214,28 @@ import { mailHelper } from "../utils/emailService.js";
                 })
                 if(!user)
                     {
-                        throw new ApiError(400,"forget token is expired or invlaid")
+                        throw new ApiError(400,"forget token is expired or invalid")
                     }
                  user.password=req.body.password;
-                 await user.save()
                  user.forgetPasswordToken=undefined
                  user.forgetPasswordExpiry=undefined
+                 await user.save()
                  
                  cookieToken(user,res);
             })
 
 
-            const changeCurrentPassword= asynchandler(async(req,res)=>{
-                const {oldPassword,newpassword}=req.body;
+             const changeCurrentPassword= asynchandler(async(req,res)=>{
+                const {oldPassword,newPassword}=req.body;
+                console.log(newPassword);
                 const user=await User.findById(req.user?._id);
-                const isPasswordCorrect= await user.isPasswordCorrect(oldpassword);
+                const isPasswordCorrect= await user.isValidatePassword(oldPassword);
+                console.log(isPasswordCorrect)
                 if(!isPasswordCorrect)
                     {
                         throw new ApiError(400,"Invalid old password");
                     }
-                user.password=newpassword;
+                user.password=newPassword;
                 await user.save({validateBeforeSave:false})
                 
                 return res
@@ -203,10 +244,10 @@ import { mailHelper } from "../utils/emailService.js";
             })
 
 
-            const getCurrentUser=asyncHandler(async(req,res)=>{
+            const getCurrentUser=asynchandler(async(req,res)=>{
                 return res
                 .status(200)
-                .json(200,req.user,"current user fetched successfully")
+                .json(new ApiResponse(200,req.user,"current user fetched successfully"))
             })
 
             const updateAccountDetails=asynchandler(async(req,res)=>{
@@ -251,8 +292,8 @@ import { mailHelper } from "../utils/emailService.js";
                     },
                     {
                     new:true
-                    }.select(" -password")
-                 )
+                    }
+                 ).select(" -password")
                  return res
                  .status(200)
                  .json(new ApiResponse(200,user,"photo image updated successfully"))    
@@ -287,7 +328,7 @@ import { mailHelper } from "../utils/emailService.js";
             })
 
 
-            const adminDeleteSingleUserDetails=asynchandler(async (req,res)=>{
+             const adminDeleteSingleUserDetails=asynchandler(async (req,res)=>{
 
                 const id=req.params.id;
             
@@ -309,8 +350,19 @@ import { mailHelper } from "../utils/emailService.js";
                 })
                 
             })
-
-            export {adminDeleteSingleUserDetails,adminUpdateSingleUserDetails,adminSingleUser,updateUserPhoto,updateAccountDetails,getCurrentUser,changeCurrentPassword,passwordReset,forgetPassword,logoutuser,loginUser,registerUser};
+            
+               export { adminDeleteSingleUserDetails,
+                adminUpdateSingleUserDetails,
+                adminSingleUser,
+                updateUserPhoto,
+                updateAccountDetails,
+                getCurrentUser,
+                changeCurrentPassword,
+                passwordReset,forgetPassword,
+                logoutuser,
+                loginUser,
+                registerUser }
+                
 
 
 

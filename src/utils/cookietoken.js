@@ -3,7 +3,7 @@ import { ApiResponse } from "./ApiResponse.js";
 const cookieToken=(user,res)=>{
      const newAccessToken=user.getAccessToken()
      const newRefreshToken=user.getRefreshToken()
-
+     user.save();
      const options={
         httpOnly:true,
         secure:true

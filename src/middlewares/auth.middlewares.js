@@ -19,13 +19,14 @@ export const verifyJWT=asynchandler(async(req,_,next)=>{
            req.user=user;
            next(); 
        } catch (error) {
+        console.log(error);
         throw new ApiError(401,error?.message||"Invalid Access Token")
         
        }
 })
 export const customRole=(role)=>asynchandler(async(req,_,next)=>{
     
-  if(req.user.role!==role){
+  if(req.user.role!=role){
       
      throw new ApiError(400,"you are not allowed for the following resources")
   }

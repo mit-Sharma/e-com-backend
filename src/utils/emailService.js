@@ -4,7 +4,7 @@ import dotenv from "dotenv"
 const mailHelper=async (options)=>{
     const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
-        port: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
         auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS
@@ -12,7 +12,7 @@ const mailHelper=async (options)=>{
     });
 
     const message={
-        from:'sharma@gmail.com',
+        from:'sharmaamit8091@gmail.com',
         to: options.email,
         subject: options.subject,
         text: options.message
