@@ -9,7 +9,7 @@ const createOrder=asynchandler(async(req,res)=>{
         orderItems,
         paymentInfo,
         taxAmount,
-        shppingAmount,
+        shoppingAmount,
         totalAmount
           }=req.body;
 
@@ -69,9 +69,9 @@ const getAllOrder=asynchandler(async(req,res)=>{
 
 const adminUpdateOrder=asynchandler(async(req,res)=>{
     const order=await Order.findById(req.params.id)
-    if(order.orderStatus==="Delievered")
+    if(order.orderStatus==="Delivered")
         {
-            throw new ApiError(401,"order is already marked for delieveries")
+            throw new ApiError(401,"order is already marked for deliveries")
         }
     order.orderStatus=req.body.orderStatus;
     order.orderItems.forEach(async pro => {
@@ -92,7 +92,7 @@ async function updateProductStock(productId,quantity)
 
 }
 
-const adminDeleteOrder=BigPromise(async (req,res)=>{
+const adminDeleteOrder=asynchandler(async (req,res)=>{
 
     const order=await Order.findById(req.params.id)
 

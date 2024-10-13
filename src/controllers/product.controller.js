@@ -46,7 +46,7 @@ const getAllProduct=asynchandler(async(req,res)=>{
     })
 })
 
-exports.adminGetAllProduct=BigPromise(async(req,res,next)=>{
+exports.adminGetAllProduct=asynchandler(async(req,res,next)=>{
 
     const product=await Product.find()
 
@@ -88,7 +88,7 @@ exports.adminGetAllProduct=BigPromise(async(req,res,next)=>{
         }
     }
 
-        for(let index=0;index<req.files.photos.length;index++){
+         for(let index=0;index<req.files.photos.length;index++){
            const photoLocalPath=req.files.photos[index].path;
            const photo=await uploadOnCloudinary(photoLocalPath);
            imageArray.push(photo.url);
@@ -167,7 +167,7 @@ exports.adminGetAllProduct=BigPromise(async(req,res,next)=>{
             product.numberofreviews=product.reviews.length
         }
         let totalRating=0;
-        product.reviews.array.forEach(rev => {
+        product.reviews.forEach(rev => {
            totalRating+=rev.rating 
         });
         if(product.reviews.length!=0)
